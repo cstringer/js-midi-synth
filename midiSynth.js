@@ -21,12 +21,13 @@ function init() {
 
   setupMidi();
 
-  startBtn.addEventListener('click', () => {
-    createAudio();
-    disableStartBtn({ btnText: 'Synth Running' });
-  });
+  startBtn.addEventListener('click', onStartBtnClick);
 }
 
+function onStartBtnClick() {
+  createAudio();
+  disableStartBtn({ btnText: 'Synth Running' });
+}
 
 /*===== MIDI =====*/
 
