@@ -9,11 +9,11 @@ let masterFilter;
 const pressedKeys = {};
 
 
-init();
+document.addEventListener('DOMContentLoaded', onDomContentLoaded);
 
 
-function init() {
-  if (!'requestMIDIAccess' in navigator) {
+function onDomContentLoaded() {
+  if (!navigator.requestMIDIAccess) {
     logStatus('No MIDI support available.');
     disableStartBtn();
     return;
@@ -136,7 +136,7 @@ function playNote(note, velocity) {
   if (!audioContext) { return; }
 
   const freq = midiNoteToFreq(note);
-  osc = createOscillator(freq);
+  const osc = createOscillator(freq);
 
   const gainVal = midiVelocityToGain(velocity);
   const gainNode = createGain(gainVal);
@@ -201,7 +201,9 @@ Data 2: ${data[2]}
 }
 
 function logStatus(message) {
+  /*eslint-disable no-console*/
   console.log(message);
+  /*eslint-enable no-console*/
   status.innerText += `${message}\n`;
 }
 
