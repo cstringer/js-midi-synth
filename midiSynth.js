@@ -6,6 +6,7 @@ let audioContext;
 let masterGainNode;
 let masterFilter;
 
+const midiPorts = {};
 const pressedKeys = {};
 
 
@@ -34,21 +35,46 @@ function onStartBtnClick() {
 async function setupMidi() {
   logStatus('Setting up MIDI...');
   try {
-    const { inputs = [] } = await navigator.requestMIDIAccess();
-    inputs.forEach(enableMidiInput);
+    const access = await navigator.requestMIDIAccess();
+    access.addEventListener('statechange', onStateChange);
+    access.inputs.forEach(enableMidiInput);
   } catch(e) {
     logStatus('Error setting up MIDI: ' + e.message);
   }
 }
 
 function enableMidiInput(input) {
+  if (midiPorts[input.name]) { return; }
+
   logStatus(`Found MIDI input: '${input.name}'`);
   input.addEventListener('statechange', onStateChange);
   input.addEventListener('midimessage', onMidiMessage);
+
+  midiPorts[input.name] = input;
+}
+
+function disableMidiInput(input) {
+  if (!midiPorts[input.name]) { return; }
+
+  logStatus(`Disabling MIDI input: '${input.name}'`);
+  input.removeEventListener('statechange', onStateChange);
+  input.removeEventListener('midimessage', onMidiMessage);
+
+  delete midiPorts[input.name];
 }
 
 function onStateChange({ port }) {
   logStatus(`State change: ${port.name}, ${port.state}`);
+
+  switch (port.state) {
+    case 'connected':
+      enableMidiInput(port);
+      break;
+
+    case 'disconnected':
+      disableMidiInput(port);
+      break;
+  }
 }
 
 function onMidiMessage(message) {
