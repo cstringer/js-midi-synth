@@ -66,14 +66,16 @@ function disableMidiInput(input) {
 function onStateChange({ port }) {
   logStatus(`State change: ${port.name}, ${port.state}`);
 
-  switch (port.state) {
-    case 'connected':
-      enableMidiInput(port);
-      break;
+  if (port.type === 'input') {
+    switch (port.state) {
+      case 'connected':
+        enableMidiInput(port);
+        break;
 
-    case 'disconnected':
-      disableMidiInput(port);
-      break;
+      case 'disconnected':
+        disableMidiInput(port);
+        break;
+    }
   }
 }
 
