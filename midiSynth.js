@@ -15,6 +15,10 @@ document.addEventListener('DOMContentLoaded', onDomContentLoaded);
 
 
 function onDomContentLoaded() {
+  messages = document.getElementById('messages');
+  startBtn = document.getElementById('start');
+  status = document.getElementById('status');
+
   if (!navigator.requestMIDIAccess) {
     logStatus('No MIDI support available.');
     disableStartBtn();
@@ -22,10 +26,6 @@ function onDomContentLoaded() {
   }
 
   setupMidi();
-
-  messages = document.getElementById('messages');
-  startBtn = document.getElementById('start');
-  status = document.getElementById('status');
 
   startBtn.addEventListener('click', onStartBtnClick);
 }
