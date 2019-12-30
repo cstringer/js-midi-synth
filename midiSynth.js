@@ -1,15 +1,16 @@
-const messages = document.getElementById('messages');
-const startBtn = document.getElementById('start');
-const status = document.getElementById('status');
+// DOM refs
+let messages, startBtn, status;
 
-let audioContext;
-let masterGainNode;
-let masterFilter;
+// WebAudio refs
+let audioContext, masterGainNode, masterFilter;
 
+// connected MIDI devices, keyed by name
 const midiPorts = {};
+
+// currently-pressed keys, by MIDI note #
 const pressedKeys = {};
 
-
+// wait for it...
 document.addEventListener('DOMContentLoaded', onDomContentLoaded);
 
 
@@ -21,6 +22,10 @@ function onDomContentLoaded() {
   }
 
   setupMidi();
+
+  messages = document.getElementById('messages');
+  startBtn = document.getElementById('start');
+  status = document.getElementById('status');
 
   startBtn.addEventListener('click', onStartBtnClick);
 }
@@ -34,6 +39,7 @@ function onStartBtnClick() {
 
 async function setupMidi() {
   logStatus('Setting up MIDI...');
+
   try {
     const access = await navigator.requestMIDIAccess();
     access.addEventListener('statechange', onStateChange);
@@ -41,26 +47,6 @@ async function setupMidi() {
   } catch(e) {
     logStatus('Error setting up MIDI: ' + e.message);
   }
-}
-
-function enableMidiInput(input) {
-  if (midiPorts[input.name]) { return; }
-
-  logStatus(`Found MIDI input: '${input.name}'`);
-  input.addEventListener('statechange', onStateChange);
-  input.addEventListener('midimessage', onMidiMessage);
-
-  midiPorts[input.name] = input;
-}
-
-function disableMidiInput(input) {
-  if (!midiPorts[input.name]) { return; }
-
-  logStatus(`Disabling MIDI input: '${input.name}'`);
-  input.removeEventListener('statechange', onStateChange);
-  input.removeEventListener('midimessage', onMidiMessage);
-
-  delete midiPorts[input.name];
 }
 
 function onStateChange({ port }) {
@@ -79,21 +65,37 @@ function onStateChange({ port }) {
   }
 }
 
-function onMidiMessage(message) {
+function enableMidiInput(input = {}) {
+  if (midiPorts[input.name]) { return; }
+
+  logStatus(`Enabling MIDI input: '${input.name}'`);
+  input.addEventListener('midimessage', onMidiMessage);
+
+  midiPorts[input.name] = input;
+}
+
+function disableMidiInput(input = {}) {
+  if (!midiPorts[input.name]) { return; }
+
+  logStatus(`Disabling MIDI input: '${input.name}'`);
+  input.removeEventListener('midimessage', onMidiMessage);
+
+  delete midiPorts[input.name];
+}
+
+function onMidiMessage(message = {}) {
   printMessageInfo(message);
 
-  const { data } = message;
-  const [statusByte, data1, data2] = data;
+  const [statusByte, data1, data2] = message.data;
 
   if (isNoteOn(statusByte)) {
     playNote(data1, data2);
-  }
 
-  if (isNoteOff(statusByte)) {
+  } else if (isNoteOff(statusByte)) {
     stopNote(data1);
-  }
 
-  if (statusByte === 176) {
+  // https://www.midi.org/specifications-old/item/table-3-control-change-messages-data-bytes-2
+  } else if (statusByte === 176) {
     switch(data1) {
       // modulation
       case 1:
@@ -104,10 +106,9 @@ function onMidiMessage(message) {
         setMasterGain(data2 / 127);
         break;
     }
-  }
 
-  // pitch bend
-  if (statusByte === 224) {
+  } else if (statusByte === 224) {
+    // pitch bend
     setMasterFilterFreq(data2);
   }
 }
@@ -228,7 +229,7 @@ Data 2: ${data[2]}
   `;
 }
 
-function logStatus(message) {
+function logStatus(message = '') {
   /*eslint-disable no-console*/
   console.log(message);
   /*eslint-enable no-console*/
